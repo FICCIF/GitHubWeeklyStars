@@ -1,5 +1,7 @@
 # 每周 GitHub 新发布 Star 榜单工具
 
+![GitHubWeeklyStars](docs/banner.png)
+
 抓取**近 7 天新建的 GitHub 仓库**，按 Star 数量从多到少排列（默认数据源：GitHub 搜索 API，
 `created:>日期` 限定新建时间）。也支持抓取 GitHub Trending 热度榜（--source trending，按一周新增 star 的热度）。
 
