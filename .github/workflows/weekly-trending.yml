@@ -1,0 +1,37 @@
+name: Weekly GitHub Trending Report
+
+on:
+  schedule:
+    # 每周一 00:00 UTC（北京时间周一 08:00）
+    - cron: "0 0 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate weekly new-repo report
+        run: python github_trending.py --source new --days 7 --sort total --top 0 --markdown report/weekly-trending.md
+
+      - name: Push to WeCom webhook
+        if: ${{ secrets.WEBHOOK_URL != '' }}
+        run: python weekly_push.py --webhook "${{ secrets.WEBHOOK_URL }}" --count 10
+
+      - name: Commit report
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update weekly GitHub trending report"
+          file_pattern: "report/weekly-trending.md"

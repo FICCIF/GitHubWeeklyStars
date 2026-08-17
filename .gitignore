@@ -1,0 +1,26 @@
+# ===== 构建产物 =====
+build/
+dist/
+*.spec
+
+# ===== 运行时数据（可能含 Token/密钥，切勿提交）=====
+app_config.json
+cached_data.json
+history.json
+app.log
+
+# ===== 生成文件 =====
+icon.ico
+github-new-repos-weekly.html
+github-trending-weekly.html
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ===== 编辑器 =====
+.vscode/
+.idea/
+.DS_Store

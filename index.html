@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub 每周新发布项目榜单</title>
+<style>
+  :root {
+    --bg: #f5f7fb; --card: #ffffff; --border: #e7eaf2; --text: #1f2430; --sub: #6b7280;
+    --link: #4f6ef7; --link-hover: #3b5bdb; --accent: #6d5dfc; --accent2: #9f7aea;
+    --chip: #f0f2f8; --hover: #f7f8fc; --line: rgba(31,36,48,.06);
+    --shadow: 0 2px 10px rgba(31,36,48,.06); --shadow-hover: 0 10px 28px rgba(79,110,247,.14);
+    --radius: 14px; --warn: #d97706; --err: #e5484d; --ok: #16a34a;
+  }
+  body.dark {
+    --bg: #0f1220; --card: #1a1f35; --border: #2a3050; --text: #e7ecf7; --sub: #8f98b3;
+    --link: #7d9bff; --link-hover: #93adff; --accent: #8b7cf8; --accent2: #a78bfa;
+    --chip: #262c47; --hover: #212741; --line: rgba(231,236,247,.08);
+    --shadow: 0 2px 10px rgba(0,0,0,.35); --shadow-hover: 0 10px 28px rgba(139,124,248,.18);
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+         margin: 0; background: var(--bg); color: var(--text);
+         transition: background .25s, color .25s; }
+  header { position: sticky; top: 0; z-index: 20;
+           background: color-mix(in srgb, var(--card) 82%, transparent);
+           backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+           border-bottom: 1px solid var(--line);
+           padding: 12px 22px 10px; }
+  h1 { font-size: 19px; margin: 0 0 6px; letter-spacing: .2px; }
+  .meta { font-size: 13px; color: var(--sub); margin: 0; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; align-items: center; }
+  .toolbar input, .toolbar select { padding: 6px 10px; border: 1px solid var(--border);
+           border-radius: 10px; background: var(--card); color: var(--text); font-size: 13px;
+           outline: none; transition: border-color .15s, box-shadow .15s; }
+  .toolbar input:focus, .toolbar select:focus { border-color: var(--accent);
+           box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .toolbar button { padding: 6px 13px; border: 1px solid var(--border); border-radius: 10px;
+           background: var(--card); color: var(--text); cursor: pointer; font-size: 13px;
+           transition: transform .12s, box-shadow .15s, background .15s; }
+  .toolbar button:hover { background: var(--hover); transform: translateY(-1px);
+           box-shadow: var(--shadow); }
+  .toolbar button.primary {
+           background: linear-gradient(135deg, var(--accent), var(--accent2));
+           color: #fff; border: none; font-weight: 600; }
+  .toolbar button.primary:hover { box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 40%, transparent); }
+  .toolbar button.danger { color: var(--err); }
+  .toolbar .spacer { flex: 1; }
+  #status { padding: 10px 22px 0; font-size: 14px; color: var(--sub); }
+  .err { color: var(--err); font-weight: 500; }
+  #list { padding: 12px 22px 48px; }
+  #list.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+               gap: 12px; align-items: start; }
+  #list.list { display: block; }
+  #list.list .card { margin-bottom: 10px; }
+  .card.hero { grid-column: 1 / -1;
+               background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 9%, var(--card)), var(--card));
+               border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+               box-shadow: var(--shadow-hover); }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 22px 4px; }
+  .stat { display: inline-flex; align-items: center; gap: 6px;
+          background: color-mix(in srgb, var(--card) 80%, transparent);
+          border: 1px solid var(--border); border-radius: 999px; padding: 3px 12px;
+          font-size: 12px; color: var(--sub); box-shadow: var(--shadow);
+          backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .stat b { color: var(--text); font-weight: 600; }
+  #toTop { position: fixed; right: 22px; bottom: 22px; z-index: 30; width: 40px; height: 40px;
+           border-radius: 50%; border: 1px solid var(--border); background: var(--card);
+           color: var(--text); cursor: pointer; box-shadow: var(--shadow-hover);
+           font-size: 16px; display: none; transition: transform .15s, background .15s; }
+  #toTop:hover { transform: translateY(-2px); background: var(--hover); }
+  .card { display: flex; background: color-mix(in srgb, var(--card) 88%, transparent);
+          border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+          border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px;
+          box-shadow: var(--shadow); backdrop-filter: blur(10px) saturate(1.2);
+          -webkit-backdrop-filter: blur(10px) saturate(1.2);
+          transition: transform .18s, box-shadow .18s, border-color .18s; }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover);
+                border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+  .card.fav { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+  .rank { font-size: 19px; font-weight: 700; color: var(--sub); width: 44px; flex: none;
+          padding-top: 1px; font-variant-numeric: tabular-nums; }
+  .rank.rank1 { color: #f5a623; } .rank.rank2 { color: #a8b0bf; } .rank.rank3 { color: #c98a4b; }
+  .body { flex: 1; min-width: 0; }
+  .title { margin-bottom: 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .title a { font-size: 15px; font-weight: 600; color: var(--link); text-decoration: none; }
+  .title a:hover { color: var(--link-hover); text-decoration: underline; }
+  .badge { display: inline-block; border-radius: 10px; padding: 1px 9px; font-size: 11px;
+           font-weight: 600; background: color-mix(in srgb, var(--ok) 14%, transparent);
+           color: var(--ok); }
+  .badge.top { background: linear-gradient(135deg, #f5a623, #ef7e3a); color: #fff;
+               box-shadow: 0 2px 6px rgba(245,166,35,.35); }
+  .star { color: #f5a623; font-weight: 700; }
+  .lang { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 12px;
+          font-weight: 500; }
+  .date { font-size: 12px; color: var(--sub); }
+  .zh { font-size: 14px; margin: 5px 0; line-height: 1.6; }
+  .comment { font-size: 13px; color: var(--accent); margin: 2px 0 4px; }
+  .meta2 { font-size: 13px; color: var(--sub); margin: 4px 0; }
+  .src { font-size: 12px; color: var(--sub); word-break: break-all; }
+  .src a { color: var(--link); text-decoration: none; }
+  .btns { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .btns button { padding: 3px 11px; border: 1px solid var(--border); border-radius: 999px;
+                 background: var(--card); color: var(--text); cursor: pointer; font-size: 12px;
+                 transition: background .15s, border-color .15s, transform .12s; }
+  .btns button:hover { background: var(--hover); border-color: var(--accent);
+                       transform: translateY(-1px); }
+  .detail { display: none; margin-top: 9px; padding: 10px 12px; border: 1px dashed var(--border);
+            border-radius: 10px; font-size: 13px; color: var(--sub); line-height: 1.7;
+            background: color-mix(in srgb, var(--card) 45%, transparent);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .detail.show { display: block; }
+  .modal { display: none; position: fixed; inset: 0; z-index: 99;
+           align-items: center; justify-content: center;
+           background: rgba(15, 18, 32, .45); backdrop-filter: blur(4px); }
+  .modal.show { display: flex; }
+  .modal-box { background: color-mix(in srgb, var(--card) 88%, transparent);
+               border: 1px solid var(--border); border-radius: 16px;
+               padding: 20px 24px; width: 430px; max-width: 92vw; box-shadow: var(--shadow-hover);
+               backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .modal-box h3 { margin-top: 0; }
+  .modal-box label { display: block; font-size: 13px; margin: 12px 0 4px; color: var(--sub); }
+  .modal-box input, .modal-box select { width: 100%; box-sizing: border-box; padding: 7px 10px;
+               border: 1px solid var(--border); border-radius: 10px; background: var(--card);
+               color: var(--text); outline: none; }
+  .modal-box input:focus { border-color: var(--accent); }
+  .modal-actions { margin-top: 16px; text-align: right; }
+  .modal-actions button { margin-left: 8px; padding: 7px 16px; border: 1px solid var(--border);
+               border-radius: 10px; background: var(--card); color: var(--text); cursor: pointer; }
+  .modal-actions button:hover { background: var(--hover); }
+  .tooltip-note { font-size: 12px; color: var(--sub); margin-top: 8px; line-height: 1.6; }
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--sub) 30%, transparent);
+                              border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  @keyframes bgShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  body.anim-grad { animation: bgShift 14s ease infinite; }
+  .aurora { position: fixed; inset: 0; z-index: -1; pointer-events: none; display: none;
+            background:
+              radial-gradient(38% 55% at 18% 22%, var(--c1, #667eea), transparent 70%),
+              radial-gradient(42% 60% at 82% 18%, var(--c2, #f093fb), transparent 70%),
+              radial-gradient(48% 62% at 55% 82%, var(--c3, #4facfe), transparent 70%);
+            background-size: 170% 170%; filter: blur(40px); opacity: .8;
+            animation: bgShift 20s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div class="aurora" id="aurora"></div>
+<header>
+  <h1>📈 GitHub 每周新发布项目榜单 <span id="ver" style="font-size:12px;color:var(--sub);font-weight:400;margin-left:6px;"></span></h1>
+  <p class="meta" id="meta">加载中...</p>
+  <div class="toolbar">
+    <input id="q" placeholder="搜索项目名/关键词" oninput="render()" size="18">
+    <select id="langFilter" onchange="render()"><option value="">全部语言</option></select>
+    <input id="minStar" placeholder="最少 Star" size="7" oninput="render()">
+    <button id="viewBtn" onclick="toggleView()">全部</button>
+    <button id="layoutBtn" onclick="toggleLayout()">双列</button>
+    <button onclick="openSettings()">设置</button>
+    <button onclick="openHistory()">历史</button>
+    <button onclick="toggleTheme()" id="themeBtn">深色模式</button>
+    <button onclick="openModal('aiModal')">AI 点评</button>
+    <button onclick="openModal('bgModal')">背景</button>
+    <button onclick="exportCSV()">导出 CSV</button>
+    <button onclick="exportMD()">导出 Markdown</button>
+    <span class="spacer"></span>
+    <button class="primary" onclick="loadData(true)">刷新榜单</button>
+    <button class="danger" onclick="shutdown()">退出程序</button>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+<div id="status"></div>
+<div id="list"></div>
+
+<div class="modal" id="aiModal">
+  <div class="modal-box">
+    <h3 style="margin-top:0">AI 点评设置</h3>
+    <label>API 地址（OpenAI 兼容，如 https://api.openai.com/v1 或 DeepSeek 等）</label>
+    <input id="aiBase" placeholder="https://api.openai.com/v1">
+    <label>API Key</label>
+    <input id="aiKey" type="password" placeholder="sk-...">
+    <label>模型名</label>
+    <input id="aiModel" placeholder="gpt-4o-mini / deepseek-chat ...">
+    <div class="tooltip-note">不配置也能用：会自动生成点评（基于分类+数据）。配置后点击「保存并生成」会对前 15 个项目调用一次接口。</div>
+    <div class="modal-actions">
+      <button onclick="closeModal('aiModal')">取消</button>
+      <button onclick="saveAI()">保存并生成</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="bgModal">
+  <div class="modal-box">
+    <h3 style="margin-top:0">自定义背景</h3>
+    <label>背景类型</label>
+    <select id="bgType">
+      <option value="default">默认</option>
+      <option value="color">纯色</option>
+      <option value="gradient">渐变</option>
+      <option value="gradient-anim">动态渐变</option>
+      <option value="aurora">动态极光</option>
+      <option value="image">图片</option>
+    </select>
+    <label>纯色选择（渐变请点下面预设）</label>
+    <input id="bgColor" type="color" value="#667eea" style="height:34px;padding:2px">
+    <label>渐变预设</label>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+      <button onclick="setBgGradient('linear-gradient(135deg,#667eea,#764ba2)')">紫蓝</button>
+      <button onclick="setBgGradient('linear-gradient(135deg,#f093fb,#f5576c)')">粉红</button>
+      <button onclick="setBgGradient('linear-gradient(135deg,#4facfe,#00f2fe)')">天蓝</button>
+      <button onclick="setBgGradient('linear-gradient(135deg,#43e97b,#38f9d7)')">青绿</button>
+      <button onclick="setBgGradient('linear-gradient(135deg,#484a4d,#101418)')">暗黑渐变</button>
+      <button onclick="setBgAnimated()">动态渐变</button>
+      <button onclick="setBgAurora()">动画极光</button>
+    </div>
+    <label>背景图片（选择后立即生效）</label>
+    <input type="file" id="bgFile" accept="image/*" onchange="bgImageChange(this)">
+    <div class="tooltip-note">图片会以 base64 存进 exe 旁边的 app_config.json；想恢复默认就选「默认」再点保存。</div>
+    <div class="modal-actions">
+      <button onclick="closeModal('bgModal')">取消</button>
+      <button onclick="saveBg()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="settingsModal">
+  <div class="modal-box">
+    <h3 style="margin-top:0">设置</h3>
+    <label>最低 Star 数（保存后重新抓取）</label>
+    <input id="setMinStars" type="number" min="0">
+    <label>GitHub Token（可选，提升 API 限流；仅保存在本机配置）</label>
+    <input id="setToken" type="password" placeholder="ghp_...">
+    <label>更新仓库（可选，检查新版本用，格式 owner/repo）</label>
+    <input id="setRepo" placeholder="owner/repo">
+    <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="setTranslate" style="width:auto;"> 启用中文简介翻译（关闭后加载更快，简介显示英文原文）</label>
+    <div class="tooltip-note" id="setVers"></div>
+    <div class="tooltip-note" id="setUpdateResult"></div>
+    <div class="modal-actions">
+      <button onclick="checkUpdate()">检查更新</button>
+      <button onclick="closeModal('settingsModal')">取消</button>
+      <button onclick="saveSettings()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="histModal">
+  <div class="modal-box" style="width:540px;max-height:80vh;display:flex;flex-direction:column;">
+    <h3 style="margin-top:0">历史周榜 📅</h3>
+    <div id="histList" style="overflow:auto;min-height:200px;max-height:60vh;padding-right:6px;"></div>
+    <div class="modal-actions">
+      <button onclick="closeModal('histModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var CFG = {theme:'light', favorites:[], ignored:[], ai:{base_url:'',api_key:'',model:''}, layout:'grid'};
+var APP_VERSION = '';
+var LIST = [];
+var SHOWN = 0;
+var STEP = 40;
+var OBS = null;
+var LOAD_ATTEMPTS = 0;
+var DIAG_SHOWN = false;
+var DATA = null;
+var VIEW = 'all';
+var COMMENTS = {};
+
+function esc(s) {
+  s = String(s == null ? '' : s);
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function fmt(n) { return Number(n || 0).toLocaleString(); }
+function langStyle(lang) {
+  if (!lang) return 'background:#eceef3;color:#6b7280;';
+  var map = {
+    python: ['#eef4ff','#2563eb'], javascript: ['#fef3c7','#b45309'], typescript: ['#e0ecff','#1d4ed8'],
+    html: ['#fee2e2','#dc2626'], css: ['#e0f2fe','#0369a1'], shell: ['#e7f5ec','#157347'],
+    rust: ['#ffe4e6','#be123c'], go: ['#d1fae5','#047857'], 'c++': ['#fce7f3','#be185d'],
+    c: ['#f3e8ff','#7e22ce'], java: ['#fef2f2','#b91c1c'], 'c#': ['#e8f5e9','#2e7d32'],
+    swift: ['#fff7ed','#c2410c'], kotlin: ['#fdf4ff','#a21caf'], ruby: ['#fce7f3','#be185d'],
+    php: ['#f3e8ff','#6d28d9'], vue: ['#dcfce7','#15803d'], dart: ['#e0f2fe','#0284c7'],
+    lua: ['#dbeafe','#1e40af'], solidity: ['#fdf2f8','#be185d'], 'objective-c': ['#e5e7eb','#374151'],
+    'jupyter notebook': ['#fff7ed','#c2570d']
+  };
+  var c = map[(lang + '').toLowerCase()];
+  if (c) return 'background:' + c[0] + ';color:' + c[1] + ';';
+  return 'background:#e9eef7;color:#4a5a78;';
+}
+function apiGet(path, cb, errCb) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', path, true);
+  xhr.onload = function(){
+    if (xhr.status !== 200) { if (errCb) errCb(xhr.status); else showError('请求失败：' + xhr.status); return; }
+    try { cb(JSON.parse(xhr.responseText)); } catch(e){ showError('数据解析失败'); }
+  };
+  xhr.onerror = function(){ if (errCb) errCb(0); else showError('无法连接本地服务'); };
+  xhr.send();
+}
+function apiPost(path, obj, cb) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', path, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function(){ if (cb) cb(xhr.status); };
+  xhr.send(JSON.stringify(obj));
+}
+function loadData(refresh) {
+  var status = document.getElementById('status');
+  var meta = document.getElementById('meta');
+  LOAD_ATTEMPTS++;
+  if (LOAD_ATTEMPTS > 6 && !DIAG_SHOWN && !refresh) {
+    DIAG_SHOWN = true;
+    apiGet('/api/diag', function(d){
+      var g = d.github || {};
+      var t = d.translate || {};
+      var tinfo = t.ok ? '，翻译接口正常' : ('，翻译接口不可达：' + (t.error || '未知'));
+      var info = g.ok ? ('GitHub API 可达，搜索剩余 ' + (g.remaining == null ? '未知' : g.remaining) + ' 次' + tinfo)
+                      : ('GitHub API 不可达：' + (g.error || '未知原因') + tinfo);
+      if (status) status.innerHTML = (status.innerHTML || '') + '<br><span style="color:var(--sub);">网络诊断：' + esc(info) + '</span>';
+    });
+  }
+  if (status) status.innerHTML = refresh ? '正在刷新最新榜单...' : '正在加载榜单...';
+  if (meta) meta.textContent = '加载中...';
+  apiGet(refresh ? '/refresh' : '/api/data', function(res){
+    if (res.error) { showError(res.error); return; }
+    if (res.loading) {
+      // 后台仍在抓取：有数据先展示，无数据就显示进度
+      if (res.projects && res.projects.length) {
+        DATA = res.projects;
+        fillLangs();
+        if (meta) meta.textContent = '共 ' + DATA.length + ' 个项目 · 按 Star 从多到少 · 更新于 ' + res.updated
+          + (res.from_cache ? '（缓存）' : '');
+        render();
+      } else {
+        var wrap = document.getElementById('list');
+        if (wrap) wrap.innerHTML = '<p style="padding:20px;color:var(--sub);">暂无数据，等待后台抓取...</p>';
+      }
+      if (status) status.innerHTML = res.progress || '正在抓取数据，请稍候...';
+      setTimeout(function(){ loadData(false); }, 2500);
+      return;
+    }
+    DATA = res.projects;
+    fillLangs();
+    DIAG_SHOWN = false;
+    if (meta) meta.textContent = '共 ' + DATA.length + ' 个项目 · 按 Star 从多到少 · 更新于 ' + res.updated
+      + (res.from_cache ? '（来自缓存）' : '');
+    render();
+    if (res.from_cache) {
+      if (status) status.innerHTML = '已显示上次缓存，正在后台刷新最新榜单...';
+      setTimeout(function(){ loadData(true); }, 800);
+    } else if (status) {
+      status.innerHTML = '';
+    }
+  }, function(st){ showError('请求失败（' + st + '）。若提示限流，请等待 1 分钟，或点「设置」填入 GitHub Token'); });
+}
+function showError(msg) {
+  document.getElementById('status').innerHTML = '<span class="err">' + esc(msg) + '</span>';
+  document.getElementById('meta').textContent = '加载失败';
+}
+function fillLangs() {
+  var langs = {}, sel = document.getElementById('langFilter'), v = sel.value;
+  DATA.forEach(function(p){ if (p.language) langs[p.language] = true; });
+  var html = '<option value="">全部语言</option>';
+  Object.keys(langs).sort().forEach(function(l){ html += '<option value="' + esc(l) + '">' + esc(l) + '</option>'; });
+  sel.innerHTML = html;
+  sel.value = v;
+}
+function filtered() {
+  if (!DATA) return [];
+  var q = (document.getElementById('q').value || '').trim().toLowerCase();
+  var lang = document.getElementById('langFilter').value;
+  var min = parseInt(document.getElementById('minStar').value || '0', 10) || 0;
+  var showAllIgnored = document.getElementById('showIgnoredCb') && document.getElementById('showIgnoredCb').checked;
+  return DATA.filter(function(p){
+    if (VIEW === 'fav' && CFG.favorites.indexOf(p.name) < 0) return false;
+    if (!showAllIgnored && CFG.ignored.indexOf(p.name) >= 0) return false;
+    if (lang && p.language !== lang) return false;
+    if (p.stars < min) return false;
+    if (q && (p.name.toLowerCase().indexOf(q) < 0)
+        && (p.zh_desc || '').toLowerCase().indexOf(q) < 0
+        && (p.description || '').toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+}
+function isFav(n) { return CFG.favorites.indexOf(n) >= 0; }
+function isIgn(n) { return CFG.ignored.indexOf(n) >= 0; }
+function toggleFav(n) {
+  var i = CFG.favorites.indexOf(n);
+  if (i >= 0) CFG.favorites.splice(i,1); else CFG.favorites.push(n);
+  saveCfg(); render();
+}
+function toggleIgn(n) {
+  var i = CFG.ignored.indexOf(n);
+  if (i >= 0) CFG.ignored.splice(i,1); else CFG.ignored.push(n);
+  saveCfg(); render();
+}
+function toggleView() {
+  VIEW = (VIEW === 'all') ? 'fav' : 'all';
+  document.getElementById('viewBtn').textContent = (VIEW === 'fav') ? '只看收藏' : '全部';
+  render();
+}
+function saveCfg() { apiPost('/api/config', CFG); }
+function toggleTheme() {
+  CFG.theme = (CFG.theme === 'dark') ? 'light' : 'dark';
+  applyAppearance(); saveCfg();
+}
+function applyAppearance() {
+  var dark = CFG.theme === 'dark';
+  var b = CFG.bg || {type:'default', value:''};
+  var cls = dark ? 'dark' : '';
+  if (b.type === 'gradient-anim') cls = (cls ? cls + ' ' : '') + 'anim-grad';
+  document.body.className = cls;
+  var body = document.body;
+  body.style.background = '';
+  body.style.backgroundSize = '';
+  if (b.type === 'gradient' || b.type === 'gradient-anim') {
+    body.style.background = b.value || 'linear-gradient(120deg,#667eea,#764ba2)';
+    if (b.type === 'gradient-anim') body.style.backgroundSize = '300% 300%';
+  } else if (b.type === 'color') {
+    body.style.background = b.value || '';
+  } else if (b.type === 'image' && b.value) {
+    body.style.background = 'url(' + b.value + ') center / cover no-repeat fixed';
+  }
+  var aur = document.getElementById('aurora');
+  if (aur) aur.style.display = (b.type === 'aurora') ? 'block' : 'none';
+  if (aur && b.type === 'aurora') {
+    var parts = (b.value || '#667eea,#f093fb,#4facfe').split(',');
+    aur.style.setProperty('--c1', (parts[0] || '#667eea').trim());
+    aur.style.setProperty('--c2', (parts[1] || '#f093fb').trim());
+    aur.style.setProperty('--c3', (parts[2] || '#4facfe').trim());
+  }
+  document.getElementById('themeBtn').textContent = dark ? '浅色模式' : '深色模式';
+}
+function applyTheme() { applyAppearance(); }
+function applyBg() { applyAppearance(); }
+function openBgModal() {
+  var b = CFG.bg || {type:'default', value:''};
+  document.getElementById('bgType').value = b.type || 'default';
+  document.getElementById('bgColor').value = (b.type === 'color' && b.value) ? b.value : '#667eea';
+  openModal('bgModal');
+}
+function setBgGradient(g) {
+  CFG.bg = {type:'gradient', value:g};
+  applyBg();
+}
+function setBgAnimated(g) {
+  CFG.bg = {type:'gradient-anim', value:g || 'linear-gradient(120deg,#667eea,#764ba2,#f093fb)'};
+  applyBg();
+}
+function setBgAurora(c) {
+  CFG.bg = {type:'aurora', value:c || '#667eea,#f093fb,#4facfe'};
+  applyBg();
+}
+function bgImageChange(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    document.getElementById('bgType').value = 'image';
+    CFG.bg = {type:'image', value:e.target.result};
+    applyBg();
+  };
+  reader.readAsDataURL(file);
+}
+function saveBg() {
+  var t = document.getElementById('bgType').value;
+  var cur = CFG.bg || {type:'default', value:''};
+  if (t === 'default') CFG.bg = {type:'default', value:''};
+  else if (t === 'color') CFG.bg = {type:'color', value:document.getElementById('bgColor').value};
+  else if (t === 'gradient' || t === 'gradient-anim') {
+    if (cur.type !== t) CFG.bg = {type: t, value: 'linear-gradient(120deg,#667eea,#764ba2)'};
+  } else if (t === 'aurora') {
+    if (cur.type !== 'aurora') CFG.bg = {type:'aurora', value:'#667eea,#f093fb,#4facfe'};
+  } else if (t === 'image' && cur.type !== 'image') CFG.bg = {type:'image', value:''};
+  saveCfg();
+  applyBg();
+  closeModal('bgModal');
+}
+function copyText(txt, btn) {
+  var old = btn.textContent;
+  function done(){ btn.textContent = '已复制'; setTimeout(function(){ btn.textContent = old; }, 1200); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done, function(){ fallbackCopy(txt); done(); });
+  } else { fallbackCopy(txt); done(); }
+}
+function fallbackCopy(txt) {
+  var t = document.createElement('textarea');
+  t.value = txt; t.style.position = 'fixed'; t.style.opacity = '0';
+  document.body.appendChild(t); t.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(t);
+}
+function toggleDetail(idx, name) {
+  var el = document.getElementById('detail-' + idx);
+  if (el.classList.contains('show')) { el.classList.remove('show'); return; }
+  el.classList.add('show');
+  el.innerHTML = '正在加载详情...';
+  apiGet('/api/repo/' + encodeURIComponent(name), function(res){
+    if (res.error) { el.innerHTML = '<span class="err">' + esc(res.error) + '</span>'; return; }
+    var html = '';
+    if (res.license) html += '许可证：' + esc(res.license) + '<br>';
+    if (res.pushed) html += '最近活跃：' + esc(res.pushed) + '（最后推送时间）<br>';
+    if (res.homepage) html += '主页：<a href="' + esc(res.homepage) + '" target="_blank" rel="noopener">' + esc(res.homepage) + '</a><br>';
+    if (res.issues !== null && res.issues !== undefined) html += '开放 Issue：' + esc(res.issues) + '<br>';
+    var rm = res.readme ? res.readme : '（该仓库未提供 README）';
+    html += 'README 摘要：' + esc(rm);
+    el.innerHTML = html;
+  });
+}
+function cloneUrl(name) { return 'https://github.com/' + name + '.git'; }
+function commentFor(p) {
+  if (COMMENTS[p.name]) return COMMENTS[p.name];
+  return '本周新发布的「' + p.purpose + '」类项目，已有 ' + fmt(p.stars) + ' Star，值得一看。';
+}
+function render() {
+  updateLayout();
+  var wrap = document.getElementById('list');
+  if (!DATA) return;
+  LIST = filtered();
+  SHOWN = 0;
+  var ignoredCount = DATA.filter(function(p){ return CFG.ignored.indexOf(p.name) >= 0; }).length;
+  var head = '<div style="font-size:12px;color:var(--sub);margin-bottom:8px;">'
+    + '显示 ' + LIST.length + ' / ' + DATA.length + ' 个 · 已屏蔽 ' + ignoredCount + ' 个'
+    + ' <label><input type="checkbox" id="showIgnoredCb" onchange="render()"> 显示已屏蔽</label></div>';
+  if (!LIST.length) {
+    wrap.innerHTML = head + '<p>没有符合条件的结果</p>';
+    buildStats(LIST);
+    return;
+  }
+  wrap.innerHTML = head + '<div id="chunks"></div>'
+    + '<div id="sentinel" style="text-align:center;padding:14px;color:var(--sub);font-size:13px;">加载更多…</div>';
+  buildStats(LIST);
+  renderChunk();
+  initObserver();
+}
+function cardHtml(p, idx) {
+  var fav = isFav(p.name), ign = isIgn(p.name);
+  var top = idx < 5;
+  var hero = (idx === 0);
+  return '<div class="card' + (fav ? ' fav' : '') + (hero ? ' hero' : '') + '">'
+    + '<div class="rank' + (idx < 3 ? (' rank' + (idx + 1)) : '') + '">' + (idx + 1) + '</div>'
+    + '<div class="body">'
+    + '<div class="title"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + esc(p.name) + '</a>'
+    + (top ? '<span class="badge top">本周 Top ' + (idx + 1) + '</span>' : '')
+    + (fav ? '<span class="badge">已收藏</span>' : '')
+    + '<span class="star">★ ' + fmt(p.stars) + '</span>'
+    + '<span class="lang" style="' + langStyle(p.language) + '">' + esc(p.language || '未标注') + '</span>'
+    + '<span class="date">创建：' + esc(p.created) + '</span></div>'
+    + '<div class="comment">💬 ' + esc(commentFor(p)) + '</div>'
+    + '<div class="zh">中文简介：' + esc(p.zh_desc) + '</div>'
+    + '<div class="meta2">作用：' + esc(p.purpose) + '　｜　适用环境：' + esc(p.env) + '</div>'
+    + '<div class="src">来源：<a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + esc(p.url) + '</a></div>'
+    + '<div class="btns">'
+    + '<button onclick="toggleFav(\'' + esc(p.name) + '\')">' + (fav ? '取消收藏' : '★ 收藏') + '</button>'
+    + '<button onclick="toggleIgn(\'' + esc(p.name) + '\')">' + (ign ? '取消屏蔽' : '✕ 屏蔽') + '</button>'
+    + '<button onclick="copyText(\'' + esc(cloneUrl(p.name)) + '\', this)">复制 clone</button>'
+    + '<button onclick="copyText(\'' + esc(p.url) + '\', this)">复制链接</button>'
+    + '<button onclick="toggleDetail(' + idx + ', \'' + esc(p.name) + '\')">详情</button>'
+    + '</div>'
+    + '<div class="detail" id="detail-' + idx + '"></div>'
+    + '</div></div>';
+}
+function renderChunk() {
+  var chunks = document.getElementById('chunks');
+  if (!chunks || !LIST) return;
+  var end = Math.min(SHOWN + STEP, LIST.length);
+  var html = '';
+  for (var i = SHOWN; i < end; i++) html += cardHtml(LIST[i], i);
+  chunks.insertAdjacentHTML('beforeend', html);
+  SHOWN = end;
+  var sentinel = document.getElementById('sentinel');
+  if (sentinel) sentinel.style.display = (SHOWN < LIST.length) ? 'block' : 'none';
+}
+function initObserver() {
+  var sentinel = document.getElementById('sentinel');
+  if (!sentinel || !window.IntersectionObserver) return;
+  if (OBS) OBS.disconnect();
+  OBS = new IntersectionObserver(function(entries){
+    if (entries[0].isIntersecting) renderChunk();
+  }, {rootMargin: '300px'});
+  OBS.observe(sentinel);
+}
+function openModal(id) { document.getElementById(id).classList.add('show'); loadAISettings(); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function loadAISettings() {
+  document.getElementById('aiBase').value = CFG.ai.base_url || '';
+  document.getElementById('aiKey').value = CFG.ai.api_key || '';
+  document.getElementById('aiModel').value = CFG.ai.model || '';
+}
+function saveAI() {
+  CFG.ai = { base_url: document.getElementById('aiBase').value.trim(),
+             api_key: document.getElementById('aiKey').value.trim(),
+             model: document.getElementById('aiModel').value.trim() };
+  saveCfg(); closeModal('aiModal');
+  var names = DATA.slice(0, 15).map(function(p){ return p.name; });
+  if (!CFG.ai.api_key) { COMMENTS = {}; render(); showError('未配置 API Key，已使用自动点评模式'); return; }
+  document.getElementById('status').innerHTML = '正在生成 AI 点评（约 10~30 秒）...';
+  apiPost('/api/ai_comment', {names: names}, function(status){
+    if (status !== 200) { showError('AI 生成失败，请检查配置'); return; }
+  });
+  setTimeout(function(){
+    apiGet('/api/ai_comments', function(res){
+      COMMENTS = res.comments || {}; render();
+      document.getElementById('status').innerHTML = '';
+    });
+  }, 1500);
+}
+function exportCSV() {
+  var list = filtered();
+  var rows = ['排名,项目,Star,创建时间,语言,作用,适用环境,中文简介,来源'];
+  list.forEach(function(p, i){
+    function c(s){ s = String(s == null ? '' : s); return '"' + s.replace(/"/g,'""') + '"'; }
+    rows.push([i + 1, c(p.name), p.stars, c(p.created), c(p.language),
+               c(p.purpose), c(p.env), c(p.zh_desc), c(p.url)].join(','));
+  });
+  download('\ufeff' + rows.join('\n'), 'github-weekly-top' + list.length + '.csv', 'text/csv');
+}
+function exportMD() {
+  var list = filtered();
+  var md = '# GitHub 每周新发布项目榜单\n\n共 ' + list.length + ' 个项目 · 按 Star 从多到少\n\n';
+  list.forEach(function(p, i){
+    md += '## ' + (i + 1) + '. ' + p.name + '（★ ' + fmt(p.stars) + '）\n'
+        + '- 来源：' + p.url + '\n'
+        + '- 语言：' + (p.language || '未标注') + '　创建：' + p.created + '\n'
+        + '- 作用：' + p.purpose + '　适用环境：' + p.env + '\n'
+        + '- 中文简介：' + p.zh_desc + '\n\n';
+  });
+  download(md, 'github-weekly-top' + list.length + '.md', 'text/markdown');
+}
+function download(content, filename, type) {
+  var blob = new Blob([content], {type: type});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+}
+function shutdown() {
+  try { fetch('/shutdown'); } catch(e) {}
+  document.body.innerHTML = '<p style="text-align:center;padding:80px 20px;font-size:16px;color:var(--sub)">程序已退出，可以关闭此页面。</p>';
+}
+apiGet('/api/config', function(cfg){
+  CFG = cfg;
+  if (!CFG.theme) CFG.theme = 'light';
+  if (!CFG.favorites) CFG.favorites = [];
+  if (!CFG.ignored) CFG.ignored = [];
+  if (!CFG.ai) CFG.ai = {};
+  if (!CFG.min_stars) CFG.min_stars = 100;
+  if (!CFG.token) CFG.token = '';
+  if (!CFG.repo) CFG.repo = '';
+  if (CFG.translate === undefined) CFG.translate = true;
+  apiGet('/api/appinfo', function(r){
+    APP_VERSION = r.version || '';
+    var v = document.getElementById('ver');
+    if (v) v.textContent = 'v' + APP_VERSION;
+  });
+  applyTheme();
+  applyBg();
+  loadData(false);
+}, function(){ applyTheme(); applyBg(); loadData(false); });
+
+function updateLayout() {
+  var el = document.getElementById('list');
+  if (el) el.className = (CFG.layout === 'list') ? 'list' : 'grid';
+  document.getElementById('layoutBtn').textContent = (CFG.layout === 'grid') ? '双列' : '单列';
+}
+function toggleLayout() {
+  CFG.layout = (CFG.layout === 'grid') ? 'list' : 'grid';
+  saveCfg();
+  updateLayout();
+}
+function buildStats(list) {
+  var el = document.getElementById('stats');
+  if (!el) return;
+  if (!list || !list.length) { el.innerHTML = ''; return; }
+  var total = list.length;
+  var stars = 0, langs = {};
+  list.forEach(function(p){
+    stars += p.stars;
+    if (p.language) langs[p.language] = 1;
+  });
+  var top = list[0];
+  el.innerHTML = ''
+    + '<span class="stat">项目 <b>' + total + '</b></span>'
+    + '<span class="stat">Star 合计 <b>' + fmt(stars) + '</b></span>'
+    + '<span class="stat">语言 <b>' + Object.keys(langs).length + '</b></span>'
+    + '<span class="stat">榜首 <b>' + esc(top.name) + '</b> ★' + fmt(top.stars) + '</span>';
+}
+
+function openSettings() {
+  document.getElementById('setMinStars').value = CFG.min_stars || 100;
+  document.getElementById('setToken').value = CFG.token || '';
+  document.getElementById('setRepo').value = CFG.repo || '';
+  document.getElementById('setTranslate').checked = (CFG.translate !== false);
+  document.getElementById('setVers').textContent = '当前版本 v' + (APP_VERSION || '?');
+  document.getElementById('setUpdateResult').innerHTML = '';
+  openModal('settingsModal');
+}
+function saveSettings() {
+  CFG.min_stars = parseInt(document.getElementById('setMinStars').value || '100', 10) || 100;
+  CFG.token = document.getElementById('setToken').value.trim();
+  CFG.repo = document.getElementById('setRepo').value.trim();
+  CFG.translate = document.getElementById('setTranslate').checked;
+  saveCfg();
+  closeModal('settingsModal');
+  loadData(true);
+}
+function checkUpdate() {
+  var el = document.getElementById('setUpdateResult');
+  el.innerHTML = '检查中…';
+  apiGet('/api/check_update', function(res){
+    if (res.error) { el.innerHTML = '<span class="err">' + esc(res.error) + '</span>'; return; }
+    if (res.has_update) {
+      el.innerHTML = '发现新版本 <b>v' + esc(res.latest) + '</b>：<a href="' + esc(res.url) + '" target="_blank" rel="noopener">前往下载</a>';
+    } else {
+      el.innerHTML = '当前已是最新版本（v' + esc(res.current) + '）';
+    }
+  }, function(){ el.innerHTML = '<span class="err">检查失败</span>'; });
+}
+function openHistory() {
+  openModal('histModal');
+  openHistoryList();
+}
+function openHistoryList() {
+  var box = document.getElementById('histList');
+  box.innerHTML = '加载中...';
+  apiGet('/api/history', function(res){
+    if (res.error) { box.innerHTML = '<span class="err">' + esc(res.error) + '</span>'; return; }
+    if (!res.weeks || !res.weeks.length) {
+      box.innerHTML = '<p style="color:var(--sub)">还没有历史记录（每次成功刷新会自动存档当周榜单）</p>';
+      return;
+    }
+    var html = '';
+    res.weeks.forEach(function(w){
+      html += '<button style="display:block;width:100%;margin:4px 0;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer;text-align:left;" onclick="loadHistoryWeek(\'' + esc(w.week) + '\')">📅 ' + esc(w.week) + '　（' + w.count + ' 个项目）</button>';
+    });
+    box.innerHTML = html;
+  }, function(){ box.innerHTML = '<span class="err">加载失败</span>'; });
+}
+function loadHistoryWeek(week) {
+  var box = document.getElementById('histList');
+  box.innerHTML = '加载中...';
+  apiGet('/api/history/' + encodeURIComponent(week), function(res){
+    if (res.error) { box.innerHTML = '<span class="err">' + esc(res.error) + '</span>'; return; }
+    var html = '<div style="margin-bottom:8px;color:var(--sub);font-size:13px;">📅 ' + esc(res.saved_at) + ' · 共 ' + res.projects.length + ' 个　<button onclick="openHistoryList()" style="border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);cursor:pointer;">← 返回周列表</button></div>';
+    res.projects.forEach(function(p, i){
+      html += '<div style="padding:6px 4px;border-bottom:1px solid var(--line);font-size:13px;">'
+        + (i + 1) + '. <a href="' + esc(p.url) + '" target="_blank" rel="noopener" style="color:var(--link);text-decoration:none;">' + esc(p.name) + '</a>'
+        + ' <span style="color:var(--accent);">★ ' + fmt(p.stars) + '</span>'
+        + ' <span style="color:var(--sub);">' + esc(p.language || '') + '</span></div>';
+    });
+    box.innerHTML = html;
+  }, function(){ box.innerHTML = '<span class="err">加载失败</span>'; });
+}
+window.onscroll = function () {
+  var b = document.getElementById('toTop');
+  if (b) b.style.display = (window.scrollY > 600) ? 'block' : 'none';
+};
+document.getElementById('toTop').onclick = function () {
+  window.scrollTo({top: 0, behavior: 'smooth'});
+};
+</script>
+<button id="toTop" title="回到顶部">↑</button>
+</body>
+</html>
